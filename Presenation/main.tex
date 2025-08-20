@@ -1,0 +1,475 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage[document]{ragged2e}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+
+\tikzstyle{block} = [rectangle, draw, minimum width=3.5cm, minimum height=1cm, text centered, font=\small, fill=gray!10]
+\tikzstyle{arrow} = [thick, ->, >=stealth]
+
+\title{Calculator Implementation on Vaman FPGA}
+
+\author{
+    \IEEEauthorblockN{Siddhanth Yellanki}
+    \IEEEauthorblockA{Department of Electrical Engineering\\
+    Indian Institute of Technology Hyderabad\\
+    Email: ee24btech11059@iith.ac.in}
+}
+
+\begin{document}
+
+\maketitle
+\begin{FlushLeft}
+\section{Introduction}
+This paper presents the design and implementation of a scientific calculator on a Vaman FPGA, using a synthesizable Verilog library for fixed-point arithmetic and elementary functions in the Q16.47 format. The system includes modules for addition, multiplication, division, comparison, and transcendental functions (sine, cosine, tangent, exponential), as well as a converter for displaying fixed-point results as ASCII characters. The calculator provides a user interface for entering numbers and operations, and displays results in human-readable decimal format. It uses numerical methods such as Euler's method and Newton-Raphson iterations to calculate the values of the transcendental functions upto an accuracy of 4 digits.
+
+\section{System Overview}
+The calculator system consists of the following components:
+\begin{itemize}
+    \item User input interface (5 x 5 Button Array)
+    \item Arithmetic and function modules (Q16.47 math library)
+    \item ASCII conversion for display
+    \item Output interface (16x2 LCD Display)
+\end{itemize}
+The entire design is implemented in Verilog and targeted for FPGA synthesis.
+\begin{center}
+\begin{tikzpicture}[node distance=1.5cm]
+
+% Nodes
+\node (input)        [block]             {Buttons Input};
+\node (ascii2q)      [block, below=of input] {ASCII to Q16.47};
+\node (calc)         [block, below=of ascii2q] {Calculator Module};
+\node (q2ascii)      [block, below=of calc] {Q16.47 to ASCII};
+\node (display)      [block, below=of q2ascii] {LCD Display};
+
+% Arrows
+\draw [arrow] (input) -- (ascii2q);
+\draw [arrow] (ascii2q) -- (calc);
+\draw [arrow] (calc) -- (q2ascii);
+\draw [arrow] (q2ascii) -- (display);
+
+\end{tikzpicture}
+\end{center}
+\section{Components}
+\
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+Component & Value & Quantity\\
+\hline
+Vaman Board & & 1\\
+\hline
+USB-UART & & 1\\
+\hline
+16x2 LCD Display & & 1\\
+\hline
+Push Buttons & & 25\\
+\hline
+Slide Switch&  & 1\\
+\hline
+Jumper Wires & F-M & 30\\
+\hline
+Wires &  & \\
+\hline
+Breadboard & & 2\\
+\hline
+\end{tabular}\\
+\
+\centerline{Table 1.0}
+
+\section{Circuit Connections}
+\subsection{Input Keyboard}
+\raggedright
+Make the Button Connections as per the table below.\\
+\vspace{0.25cm}
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+BUTTON & VAMAN BOARD & Name\\
+\hline
+Button 1 & PYGMY 1 & Num 0\\
+\hline
+Button 2 & PYGMY 2 & Num 1\\
+\hline
+Button 3 & PYGMY 3 & Num 2\\
+\hline
+Button 4 & PYGMY 4 & Num 3\\
+\hline
+Button 5 & PYGMY 5 & Num 4\\
+\hline
+Button 6 & PYGMY 6 & Num 5\\
+\hline
+Button 7& PYGMY 7& Num 6\\
+\hline
+Button 8 & PYGMY 8 & Num 7\\
+\hline
+Button 9 & PYGMY 9 & Num 8\\
+\hline
+Button 10 & PYGMY 10 & Num 9\\
+\hline
+Button 11 & PYGMY 11& Plus \\
+\hline
+Button 12 & PYGMY 12 & Minus\\
+\hline
+Button 13 & PYGMY 13 & Multiply\\
+\hline
+Button 14 & PYGMY 14 & Divide\\
+\hline
+Button 15 & PYGMY 15 & Sin\\
+\hline
+Button 16 & PYGMY 16 & Cos\\
+\hline
+Button 17 & PYGMY 17 & Tan\\
+\hline
+Button 18 & PYGMY 18 & Exp\\
+\hline
+Button 19 & PYGMY 19 & Enter\\
+\hline
+Button 20 & PYGMY 20 & Decimal\\
+\hline
+Button 21 & PYGMY 21 & Reset\\
+\hline
+Toggle & PYGMY 22 & FUnction Toggle\\
+\hline
+\end{tabular}\\
+\
+\centerline{Table 2.0}
+\subsection{LCD Connections}
+\raggedright
+Make the Circuit Connections as per the table below.\\
+\vspace{0.25cm}
+\centering
+    \begin{tabular}{|l|c|l|l|}
+        \hline
+        \textbf{Vaman} & \textbf{LCD} & \textbf{LCD Name} & \textbf{LCD Description} \\
+        \hline
+        GND & 1 & GND & \\
+        \hline
+        5V & 2 & Vcc & \\
+        \hline
+        GND & 3 & Vee & Contrast \\
+        \hline
+        PYGMY 23 & 4 & RS & Register Select \\
+        \hline
+        GND & 5 & R/W & Read/Write \\
+        \hline
+        PYGMY 24 & 6 & EN & Enable \\
+        \hline
+        PYGMY 25 & 11 & DB4 & Serial Connection \\
+        \hline
+        PYGMY 26 & 12 & DB5 & Serial Connection \\
+        \hline
+        PYGMY 27 & 13 & DB6 & Serial Connection \\
+        \hline
+        PYGMY 28 & 14 & DB7 & Serial Connection \\
+        \hline
+        5V & 15 & LED+ & Backlight \\
+        \hline
+        GND & 16 & LED- & Backlight \\
+        \hline
+    \end{tabular}
+\\
+\
+\centerline{Table 3.0}
+
+
+
+\section{Q16.47 Fixed-Point Format}
+A Q16.47 fixed-point number is a 64-bit signed value:
+\begin{itemize}
+    \item \textbf{Bit 63:} Sign bit (0 for positive, 1 for negative)
+    \item \textbf{Bits 62:47:} Integer part (16 bits)
+    \item \textbf{Bits 46:0:} Fractional part (47 bits)
+\end{itemize}
+The value is:
+\begin{equation}
+    \text{Value} = (-1)^{\text{sign}} \times \left(\text{Integer Part} + \frac{\text{Fractional Part}}{2^{47}}\right)
+\end{equation}
+The reason behind this format rather than using the industry standard IEEE-754 Single Precision Floating Point format, is due to the ease of implementing, fast calculation and low error accumulation rate. 
+\subsection{Conversion to Floating Point from Fixed Point}
+Fixed point is very simple as it is simply just shifting of bits. So to convert to fixed point,
+\begin{align}
+    Float = \frac{Fixed}{2^{47}}
+\end{align}
+\subsection{Conversion to Fixed Point from Floating Point}
+Similarly, compared to converting to fixed point,
+\begin{align}
+    Fixed = {Float}\times{2^{47}}
+\end{align}
+\subsection{Range of the calculator}
+Since, we have 63 bits of working integers, the range is $\pm 2^{63-47}$ or -65536 to 65536. In the code, 65536 is defined as infinity.
+\section{Arithmetic Modules}
+
+\subsection{Adder}
+The adder module performs signed addition of two Q16.47 numbers.
+This module is fully synthesizable and handles two's complement arithmetic.
+
+\textbf{Limitations and Edge Cases:}
+\begin{itemize}
+    \item The output saturates to the maximum if the sum exceeds the representable range of Q16.47 (i.e., overflow/underflow is possible but not flagged).
+\end{itemize}
+
+\subsection{Multiplier}
+The multiplier module multiplies two Q16.47 numbers and aligns the result using bit shifting.
+This implementation uses two's complement arithmetic and checks for overflow.
+
+\textbf{Limitations and Edge Cases:}
+\begin{itemize}
+    \item If the product exceeds the Q16.47 representable range, the overflow flag is set.
+    \item Overflow does not saturate the output; the result wraps around as per two's complement arithmetic.
+    \item Multiplying by zero always yields zero.
+    \item Multiplying the largest positive and negative values can result in overflow.
+\end{itemize}
+
+\subsection{Divider}
+The divider module implements non-restoring division using shift and subtract.
+The divider supports signed division and overflow detection.
+
+\textbf{Limitations and Edge Cases:}
+\begin{itemize}
+    \item Division by zero: If the divisor is zero, the overflow flag is set, and the quotient output is undefined (may be set to the maximum positive or negative value, depending on implementation).
+    \item Division overflow: If the result exceeds the Q16.47 range, the overflow flag is set.
+    \item Division of zero by any nonzero number yields the maximum possible number 65536.
+\end{itemize}
+
+
+\subsection{Comparison}
+The fixedCompare module compares the absolute values of two Q16.47 numbers. This is mainly used in the iterative approach of the transendental functions, to compare between the current iteration and the maximum iteration.
+
+\section{Transcendental Function Modules}
+\begin{flushleft}
+The transcendental functions are implemented using iterative or difference-equation-based numerical methods, leveraging the arithmetic modules. Below, we provide not only the update equations, but also the underlying derivations for commonly used methods such as Forward Euler, Double Euler (Leapfrog), and RK2.
+
+\subsection{sin(x): Double Euler Method}
+To compute \(\sin(x)\), recognize the second-order ordinary differential equation:
+\begin{align*}
+	\frac{d^2 y(x)}{dx^2} &= -y(x)
+\end{align*}
+where \(y(x) = \sin(x)\) and \(\frac{d^2 \sin(x)}{dx^2} = -\sin(x)\).
+
+Approximating the second derivative at a point \(x_n\) using the centered finite difference:
+\begin{align*}
+	\frac{y_{n+1} - 2y_n + y_{n-1}}{h^2} &\approx \frac{d^2 y}{dx^2}\bigg|_{x_n} 
+\end{align*}
+Substituting into the ODE:
+\begin{align*}
+	\frac{y_{n+1} - 2y_n + y_{n-1}}{h^2} = -y_n \\
+	\Rightarrow y_{n+1} = 2y_n - y_{n-1} - h^2 y_n
+\end{align*}
+Initialization: 
+\[
+y_0 = 0, \quad y_1 = h, \quad h = \frac{1}{2^{16}}
+\]
+or, in fixed point: $ y_0 = 64'd0, y_1 = 64'h0000000080000000$\\ 
+,$h = 64'h0000000080000000 $.
+
+For improved fixed-point precision, \(h\) may be chosen as \(h = \frac{1}{2^{15}}\), meaning \(h^2 = \frac{1}{2^{30}}\), which offers sufficient resolution for the system.
+
+\subsection{cos(x): Double Euler (with Different Initial Conditions)}
+Using the same update equation as for \(\sin(x)\), but initializing to match the series expansion for \(\cos(x)\):
+\[
+y_0 = 1, \quad y_1 = 0.999, \quad h = \frac{1}{2^{16}}
+\]
+or in fixed point:
+$
+y_0 = 64'h0000800000000000, y_1 = 64'h00007FFFFFFFC000, h = 64'h0000000080000000
+$
+
+\subsection{tan(x): Forward Euler Method}
+The governing ODE for the tangent is:
+\[
+\frac{dy}{dx} = 1 + y^2
+\]
+Applying the (explicit) forward Euler method, where the derivative is approximated as:
+\[
+\frac{y_{n+1} - y_n}{h} \approx f(y_n, x_n)
+\]
+leads to:
+\begin{align*}
+	y_{n+1} = y_n + (1 + y_n^2)h
+\end{align*}
+with initial conditions \( y_0 = 0,\, h = \frac{1}{2^{16}} \), or in fixed point, \( y_0 = 64'd0,\, h = 64'h0000000080000000 \).
+
+\subsection{exp(x): RK2 (Midpoint Method)}
+For exponentials, the differential equation is:
+\[
+\frac{dy}{dx} = y
+\]
+To solve with second-order accuracy, the RK2 (midpoint) method is:
+\begin{align*}
+	k_1 &= h f(x_n, y_n) = h y_n \\
+	k_2 &= h f\left(x_n + \frac{h}{2}, \, y_n + \frac{k_1}{2}\right) = h(y_n + \frac{k_1}{2}) \\
+	y_{n+1} &= y_n + \frac{1}{2}(k_1 + k_2)
+\end{align*}
+This is derived by taking an Euler step to the midpoint, evaluating the slope there, and then updating from the average of the starting and midpoint slopes.
+
+\textbf{Initial conditions}: \( y_0 = 1,\, x_0 = 0,\, h = 0.01 \). \\
+In fixed point: \( x_0 = 64'd0,\, y_0 = 64'h0000800000000000,\, h = 64'h0000000080000000 \).
+\end{flushleft}
+
+\subsection*{Summary Table of Methods}
+\begin{table}[ht]
+\centering
+\begin{tabular}{|c|c|c|l|}
+\hline
+Function & ODE & Method & Iteration Formula \\
+\hline
+$\sin(x)$    & $y''(x) = -y(x)$  & Double Euler & $y_{n+1} = 2y_n - y_{n-1} - h^2 y_n$ \\
+$\cos(x)$    & $y''(x) = -y(x)$  & Double Euler & $y_{n+1} = 2y_n - y_{n-1} - h^2 y_n$ \\
+$\tan(x)$    & $y'(x) = 1+y^2$   & Euler        & $y_{n+1} = y_n + (1 + y_n^2) h$ \\
+$\exp(x)$    & $y'(x) = y(x)$    & RK2          & $\begin{aligned}
+k_1 &= h y_n \\
+k_2 &= h (y_n + \frac{k_1}{2})\\
+y_{n+1} &= y_n + \frac{k_1 + k_2}{2}
+\end{aligned}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Fixed-Point to ASCII (\texttt{fta}) and ASCII to Fixed-Point (\texttt{atf}) Modules}
+
+\subsection{The \texttt{fta} Module: Fixed-Point to ASCII Conversion}
+
+The \texttt{fta} module converts a fixed-point binary number into its human-readable ASCII decimal representation. This is essential for displaying calculation results on an LCD or other character-based interfaces.
+
+\begin{itemize}
+    \item \textbf{Input:} A fixed-point number \texttt{value} of width $N$ (e.g., 64 bits), with $Q$ bits for the fractional part.
+    \item \textbf{Output:} An array of ASCII characters (\texttt{ascii\_array}) representing the signed decimal value, e.g., ``-12.3456''.
+\end{itemize}
+
+The conversion process:
+\begin{enumerate}
+    \item \textbf{Sign Extraction:} The sign bit is checked. If negative, the value is negated and a ``-'' is added to the ASCII output.
+    \item \textbf{Integer Part:} The integer portion is extracted by right-shifting the value by $Q$ bits. This integer is then converted to ASCII digits by repeated division and modulo by 10.
+    \item \textbf{Decimal Point:} A ``.'' character is inserted after the integer digits.
+    \item \textbf{Fractional Part:} The fractional portion (the lower $Q$ bits) is scaled up (multiplied by $10^n$ for $n$ decimal digits) and right-shifted by $Q$ to get the decimal representation, which is then converted to ASCII digits.
+    \item \textbf{Output Formatting:} The ASCII characters are stored in the output array, padded with spaces if necessary.
+\end{enumerate}
+
+\subsection{The \texttt{atf} Module: ASCII to Fixed-Point Conversion}
+
+The \texttt{atf} module performs the reverse operation: converting an ASCII string representing a decimal number into a fixed-point binary value.
+
+\begin{itemize}
+    \item \textbf{Input:} An array of ASCII characters (\texttt{ascii\_array}) representing a number, e.g., ``-12.3456''.
+    \item \textbf{Output:} A fixed-point number \texttt{value} of width $N$ and $Q$ fractional bits.
+\end{itemize}
+
+The conversion process:
+\begin{enumerate}
+    \item \textbf{Sign Detection:} Checks for a leading ``-'' character to determine if the result should be negative.
+    \item \textbf{Integer Part Parsing:} Reads ASCII digits before the decimal point, accumulating the integer value.
+    \item \textbf{Fractional Part Parsing:} After the decimal point, reads ASCII digits, accumulating the fractional value and counting the number of digits.
+    \item \textbf{Fixed-Point Assembly:} The integer part is left-shifted by $Q$ bits. The fractional part is scaled to fit into $Q$ bits (i.e., \texttt{frac\_accum * 2\^Q / 10\^d}, where $d$ is the number of fractional digits).
+    \item \textbf{Sign Application:} If the input was negative, the two's complement is applied to the result.
+\end{enumerate}
+
+\section{Performance}
+All modules use synthesizable constructs:
+\begin{itemize}
+    \item \textbf{Combinational logic:} Implemented with \texttt{always @(*)}.
+    \item \textbf{Static arrays and loops:} Loops are unrolled by synthesis tools.
+    \item \textbf{Arithmetic:} Addition, multiplication, and division are synthesizable, though division by 10 (for ASCII conversion) may be resource-intensive.
+    \item \textbf{Parameterization:} All modules are parameterized for flexibility.
+\end{itemize}
+Overflow detection and sign handling are included throughout.\\
+\section{Accuracy}
+To measure the accuracy of the calculator, we will compare it with C standard results.
+\subsection{sin(x)}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+$x$ & $sinFixed(x)$ & $sin(x)$ \\
+\hline
+1    & 0.8414792291   & 0.8414709848 \\
+2    & 0.9092910765   & 0.9092974268 \\
+1.57 & 0.9999997006   & 0.9999996829 \\
+\hline
+\end{tabular}
+\end{table}
+\bigskip
+\bigskip
+
+\subsection{cos(x)}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+$x$ & $cosFixed(x)$ & $cos(x)$ \\
+\hline
+1    & 0.5402894659    & 0.5403023059 \\
+2    & -0.4161607117   & -0.4161468365 \\
+1.57 & 0.0007737434    & 0.0007963267 \\
+\hline
+\end{tabular}
+\end{table}
+\subsection{tan(x)}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+$x$ & $tanFixed(x)$ & $tan(x)$ \\
+\hline
+1    & 1.5573755479   & 1.5574077247 \\
+1.57 & 1186.2765882125 & 1255.7655915008 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{exp(x)}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+$x$ & $expFixed(x)$ & $exp(x)$ \\
+\hline
+1   & 2.7182714591   & 2.7182818285 \\
+1.5 & 4.4816634261   & 4.4816890703 \\
+3.2 & 24.5325301975  & 24.5325301971 \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Execution}
+\subsection{Download the repository}
+\begin{lstlisting}
+git clone https://github.com/ysiddhanth/vaman.git
+cd vaman
+\end{lstlisting}
+
+\subsection{Locate the folder codes, in the Calculator folder.}
+\begin{lstlisting}
+cd Calculator/codes
+\end{lstlisting}
+\subsection{Generate the .bin file}
+\begin{footnotesize}
+\begin{lstlisting}
+ql_symbiflow -compile -src . -d ql-eos-s3 -P pu64 -t main -v main.v -p quickfeather.pcf -dump binary
+\end{lstlisting}
+\end{footnotesize}
+
+\subsection{Dump .bin files on the Vaman FPGA}
+\begin{footnotesize}
+\begin{lstlisting}
+sudo python3 <tinyfpga uploader> --port /dev/ttyACM0  --appfpga main.bin --mode fpga --reset
+\end{lstlisting}
+\end{footnotesize}
+
+\subsection{Hardware Build}
+\begin{itemize}
+    \item Connect the LCD Display and the buttons to the breadboard and make the connections to the fpga according to the above tables.
+\end{itemize}
+\includegraphics[width=0.5\textwidth]{figs/lcd.png}
+\centerline{Figure 1 -  LCD Pinout}
+\includegraphics[width=0.5\textwidth]{figs/buttons.jpeg}
+\centerline{Figure 2 -  Button Arrangement}
+\includegraphics[width=0.5\textwidth]{figs/final.jpeg}
+\centerline{Figure 3 -  The calculator}
+
+\end{FlushLeft}
+\end{document}

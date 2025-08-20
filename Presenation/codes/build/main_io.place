@@ -1,0 +1,9 @@
+#Block Name  x   y   z    pcf_line
+#----------- --  --  -    ----
+rst          24  32  0  # set_io rst 39
+$iopadmap$main.LCD_EN  20  32  0  # set_io LCD_EN 33
+$iopadmap$main.LCD_RS  18  32  0  # set_io LCD_RS 32
+$iopadmap$main.DATA_3  16  32  0  # set_io DATA(7) 31
+$iopadmap$main.DATA_2  14  32  0  # set_io DATA(6) 30
+$iopadmap$main.DATA_1  12  32  0  # set_io DATA(5) 28
+$iopadmap$main.DATA  10  32  0  # set_io DATA(4) 27

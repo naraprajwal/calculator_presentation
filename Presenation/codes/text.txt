@@ -1,0 +1,5 @@
+Commands:
+
+sudo su
+source ~/.vamenv/bin/activate
+ql_symbiflow -compile -d ql-eos-s3 -P pu64 -v *.v -t calculator -p quickfeather.pcf -dump binary
